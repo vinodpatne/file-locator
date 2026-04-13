@@ -1,4 +1,4 @@
-# FileLocator (FileHound Search)
+# FileLocator (File & Folder Search)
 
 A lightning-fast, standalone pure Java desktop search utility. Designed as a modern, zero-dependency alternative to classic tools like Locate32, FileLocator uses a custom binary indexing engine to provide instant search results across your local drives.
 

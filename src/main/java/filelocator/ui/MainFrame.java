@@ -1,0 +1,170 @@
+package filelocator.ui;
+
+import java.awt.BorderLayout;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.event.ListSelectionEvent;
+
+import filelocator.model.SearchCriteria;
+import filelocator.repository.IndexRepository;
+import filelocator.service.IndexingService;
+import filelocator.service.SearchService;
+import filelocator.ui.panel.ActionPanel;
+import filelocator.ui.panel.CriteriaPanel;
+import filelocator.ui.panel.ResultsTablePanel;
+import filelocator.ui.panel.StatusBarPanel;
+import filelocator.ui.worker.IndexWorker;
+import filelocator.ui.worker.SearchWorker;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+public class MainFrame extends JFrame {
+
+    private final IndexRepository indexRepository;
+    private final IndexingService indexingService;
+    private final SearchService searchService;
+
+    private final CriteriaPanel criteriaPanel;
+    private final ResultsTablePanel resultsTablePanel;
+    private final ActionPanel actionPanel;
+    private final StatusBarPanel statusBarPanel;
+
+    private SearchWorker currentSearchWorker;
+
+    public MainFrame(IndexRepository indexRepository, IndexingService indexingService, SearchService searchService) {
+        super("File Locator");
+        this.indexRepository = indexRepository;
+        this.indexingService = indexingService;
+        this.searchService = searchService;
+
+        this.criteriaPanel = new CriteriaPanel();
+        this.resultsTablePanel = new ResultsTablePanel();
+        this.actionPanel = new ActionPanel();
+        this.statusBarPanel = new StatusBarPanel();
+
+        initUI();
+        wireEvents();
+        checkInitialIndex();
+    }
+
+    private void initUI() {
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(1000, 750);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
+
+        JPanel topContainer = new JPanel(new BorderLayout());
+        topContainer.add(criteriaPanel, BorderLayout.CENTER);
+        topContainer.add(actionPanel, BorderLayout.EAST);
+
+        add(topContainer, BorderLayout.NORTH);
+        add(resultsTablePanel, BorderLayout.CENTER);
+        add(statusBarPanel, BorderLayout.SOUTH);
+    }
+
+    private void wireEvents() {
+        // criteria triggers search
+        criteriaPanel.addSearchListener(this::triggerSearch);
+
+        // Action Panel buttons
+        actionPanel.getClearBtn().addActionListener(e -> {
+            criteriaPanel.clearFields();
+            resultsTablePanel.clear();
+            statusBarPanel.setStatus("Status: Ready");
+        });
+
+        actionPanel.getReIndexBtn().addActionListener(e -> runIndexer());
+
+        // Table selection changes open buttons in Status Bar
+        resultsTablePanel.getTable().getSelectionModel().addListSelectionListener((ListSelectionEvent e) -> {
+            if (!e.getValueIsAdjusting()) {
+                boolean hasRow = resultsTablePanel.getTable().getSelectedRow() != -1;
+                statusBarPanel.setActionButtonsEnabled(hasRow);
+            }
+        });
+
+        // Open Files buttons
+        statusBarPanel.getOpenBtn().addActionListener(e -> resultsTablePanel.openSelected(true));
+        statusBarPanel.getOpenLocBtn().addActionListener(e -> resultsTablePanel.openSelected(false));
+
+        resultsTablePanel.getTable().addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2 && resultsTablePanel.getTable().getSelectedRow() != -1) {
+                    resultsTablePanel.openSelected(true);
+                }
+            }
+        });
+    }
+
+    private void checkInitialIndex() {
+        if (indexRepository.size() == 0) {
+            int response = JOptionPane.showConfirmDialog(this,
+                    "No database found. Would you like to scan 'This PC' (All Drives) now?",
+                    "Initial Scan Required", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE);
+            if (response == JOptionPane.YES_OPTION) {
+                runIndexer();
+            }
+        } else {
+            statusBarPanel.setStatus("Index loaded: " + indexRepository.size() + " items.");
+        }
+    }
+
+    private void runIndexer() {
+        String loc = criteriaPanel.getRawLocation();
+        List<String> rootsToScan = new ArrayList<>();
+
+        if (loc.equalsIgnoreCase("This PC")) {
+            if (indexRepository.size() > 0) {
+                int res = JOptionPane.showConfirmDialog(this,
+                        "Re-index ALL drives? This may take time.", "Confirm", JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE);
+                if (res != JOptionPane.YES_OPTION) {
+                    return;
+                }
+            }
+            for (File root : File.listRoots()) {
+                rootsToScan.add(root.getAbsolutePath());
+            }
+        } else {
+            rootsToScan.add(loc);
+        }
+
+        statusBarPanel.setStatus("Status: Scanning drives... (Please wait)");
+
+        IndexWorker worker = new IndexWorker(indexingService, indexRepository, rootsToScan, () -> {
+            statusBarPanel.setStatus("Status: Index Complete. Total Items: " + indexRepository.size());
+            triggerSearch();
+        });
+        worker.execute();
+    }
+
+    private void triggerSearch() {
+        SearchCriteria criteria = criteriaPanel.getCriteria();
+
+        // Avoid blank searching unless extensions are provided
+        if (criteria.query().length() < 1 && criteria.extension().length() < 1) {
+            return;
+        }
+
+        if (currentSearchWorker != null && !currentSearchWorker.isDone()) {
+            currentSearchWorker.cancel(true);
+        }
+
+        currentSearchWorker = new SearchWorker(searchService, criteria, results -> {
+            if (results != null) {
+                log.debug("Search completed cleanly, updating UI with {} results.", results.size());
+                resultsTablePanel.updateResults(results);
+                statusBarPanel.setStatus("Found " + results.size() + " matches.");
+            } else {
+                log.error("Search results returned null.");
+            }
+        });
+        currentSearchWorker.execute();
+    }
+}
