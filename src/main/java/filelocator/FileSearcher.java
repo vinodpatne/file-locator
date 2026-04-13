@@ -16,7 +16,7 @@ import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 public class FileSearcher {
-    private static final File INDEX_FILE = new File(System.getProperty("user.home"), ".file-search/files.idx");
+    private static final File INDEX_FILE = new File("files.idx");
     private static final ConcurrentHashMap<String, FileEntry> indexMap = new ConcurrentHashMap<>();
 
     // Magic number to detect old vs new index formats
