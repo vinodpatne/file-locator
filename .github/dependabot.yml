@@ -1,0 +1,38 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # 1. Update GitHub Actions (Highly Recommended)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "chore(deps)"
+
+  # 2. Update your Java dependencies
+  # CHOOSE ONE: Use "maven" (for pom.xml) OR "gradle" (for build.gradle)
+  - package-ecosystem: "maven" # Change to "gradle" if you use Gradle
+    directory: "/" # Assuming your pom.xml or build.gradle is in the root directory
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "java"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    # Optional: Ignore specific updates if a package is known to break your build
+    # ignore:
+    #   - dependency-name: "org.springframework.boot:spring-boot-starter-web"
+    #     versions: ["> 3.0.0"]
