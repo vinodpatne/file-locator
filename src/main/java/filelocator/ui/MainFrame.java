@@ -35,6 +35,7 @@ public class MainFrame extends JFrame {
     private final StatusBarPanel statusBarPanel;
 
     private SearchWorker currentSearchWorker;
+    private boolean isClearing = false;
 
     public MainFrame(IndexRepository indexRepository, IndexingService indexingService, SearchService searchService) {
         super("File Locator");
@@ -73,9 +74,17 @@ public class MainFrame extends JFrame {
 
         // Action Panel buttons
         actionPanel.getClearBtn().addActionListener(e -> {
-            criteriaPanel.clearFields();
-            resultsTablePanel.clear();
-            statusBarPanel.setStatus("Status: Ready");
+            isClearing = true;
+            try {
+                criteriaPanel.clearFields();
+                if (currentSearchWorker != null && !currentSearchWorker.isDone()) {
+                    currentSearchWorker.cancel(true);
+                }
+                resultsTablePanel.clear();
+                statusBarPanel.setStatus("Status: Ready");
+            } finally {
+                isClearing = false;
+            }
         });
 
         actionPanel.getReIndexBtn().addActionListener(e -> runIndexer());
@@ -145,12 +154,11 @@ public class MainFrame extends JFrame {
     }
 
     private void triggerSearch() {
-        SearchCriteria criteria = criteriaPanel.getCriteria();
-
-        // Avoid blank searching unless extensions are provided
-        if (criteria.query().length() < 1 && criteria.extension().length() < 1) {
+        if (isClearing) {
             return;
         }
+
+        SearchCriteria criteria = criteriaPanel.getCriteria();
 
         if (currentSearchWorker != null && !currentSearchWorker.isDone()) {
             currentSearchWorker.cancel(true);
