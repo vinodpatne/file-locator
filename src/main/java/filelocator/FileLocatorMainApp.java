@@ -41,6 +41,9 @@ public class FileLocatorMainApp {
 
     private static void setupModernUI() {
         try {
+            // Prevent FlatLaf from loading native libraries (DLLs) which can be blocked by Endpoint Protection
+            System.setProperty("flatlaf.useNativeLibrary", "false");
+            
             // Apply FlatLaf for a modern look
             FlatIntelliJLaf.setup();
             
