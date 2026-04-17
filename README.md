@@ -14,9 +14,7 @@ A lightning-fast, standalone pure Java desktop search utility. Designed as a mod
 
 To ensure speed and portability, FileLocator builds a highly optimized custom binary database (`.idx`) of your file system rather than relying on heavy SQL databases. 
 
-The generated index file is safely stored in your user home directory to prevent read/write permission errors:
-* **Windows:** `C:\Users\<YourUsername>\.file-search\files.idx`
-* **macOS / Linux:** `~/.file-search/files.idx`
+The generated index file `./files.idx` is stored in the current directory where file-locator jar is executed.
 
 *Note: If you ever need to completely reset the application's memory or clear the database, you can safely close the application and delete the `.file-search` folder.*
 
