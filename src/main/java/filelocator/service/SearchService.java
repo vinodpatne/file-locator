@@ -65,7 +65,7 @@ public class SearchService {
             comparator = comparator.reversed();
         }
 
-        List<FileEntry> results = indexRepository.getAll().parallelStream()
+        java.util.stream.Stream<FileEntry> stream = indexRepository.getAll().parallelStream()
                 // 1. Directory Filter
                 .filter(e -> criteria.includeFolders() || !e.isDirectory())
                 // 2. Size Filter
@@ -100,7 +100,19 @@ public class SearchService {
                     if (finalPattern != null) return finalPattern.matcher(e.nameLower()).find();
                     if (finalExact) return e.nameLower().equals(finalTerm);
                     return e.nameLower().contains(finalTerm);
-                })
+                });
+
+        if (criteria.findDuplicates()) {
+            // Group by name + size
+            java.util.Map<String, List<FileEntry>> grouped = stream.collect(Collectors.groupingBy(
+                    e -> e.nameLower() + "::" + e.size()
+            ));
+            stream = grouped.values().stream()
+                    .filter(list -> list.size() > 1)
+                    .flatMap(List::stream);
+        }
+
+        List<FileEntry> results = stream
                 .sorted(comparator)
                 .limit(200)
                 .collect(Collectors.toList());

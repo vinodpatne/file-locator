@@ -119,6 +119,26 @@ public class InMemoryIndexRepository implements IndexRepository {
     }
 
     @Override
+    public void remove(String path) {
+        indexMap.remove(path);
+    }
+
+    @Override
+    public void removeByPrefix(String prefixPath) {
+        String prefix = prefixPath.toLowerCase() + File.separator;
+        String exact = prefixPath.toLowerCase();
+        indexMap.keySet().removeIf(k -> {
+            String p = k.toLowerCase();
+            return p.equals(exact) || p.startsWith(prefix);
+        });
+    }
+
+    @Override
+    public void save() {
+        replaceIndexAtomically(this.indexMap.values());
+    }
+
+    @Override
     public void clear() {
         indexMap.clear();
     }

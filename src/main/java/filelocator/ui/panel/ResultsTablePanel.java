@@ -71,6 +71,15 @@ public class ResultsTablePanel extends JPanel {
         model.setRowCount(0);
     }
 
+    public List<String> getSelectedFilePaths() {
+        int[] rows = table.getSelectedRows();
+        List<String> paths = new java.util.ArrayList<>();
+        for (int row : rows) {
+            paths.add((String) model.getValueAt(row, 1));
+        }
+        return paths;
+    }
+
     public void updateResults(List<FileEntry> results) {
         clear();
         for (FileEntry e : results) {

@@ -22,6 +22,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentListener;
 
 import filelocator.model.SearchCriteria;
+import filelocator.model.UserPreferences;
 
 public class CriteriaPanel extends JPanel {
     // Tab 1: Name & Location
@@ -48,18 +49,33 @@ public class CriteriaPanel extends JPanel {
     // Tab 3: Advanced
     private final JCheckBox foldersCheckBox = new JCheckBox("Include Folders in Results", false);
     private final JCheckBox regexCheckBox = new JCheckBox("Use Regular Expressions (Regex)", false);
+    private final JCheckBox duplicatesCheckBox = new JCheckBox("Find Duplicates (Name & Size)", false);
     private final JComboBox<String> sortCombo = new JComboBox<>(
             new String[] { "Name", "Size", "Date Modified" });
     private final JComboBox<String> sortDirCombo = new JComboBox<>(new String[] { "Ascending", "Descending" });
 
+    private final UserPreferences userPrefs;
+
     public CriteriaPanel() {
+        userPrefs = UserPreferences.load();
+        
         setLayout(new BorderLayout());
         
         locationCombo.setEditable(true);
         locationCombo.addItem("This PC");
+        boolean foundDefault = false;
         for (File root : File.listRoots()) {
-            locationCombo.addItem(root.getAbsolutePath());
+            String path = root.getAbsolutePath();
+            if (path.equalsIgnoreCase(userPrefs.getDefaultLocation())) {
+                foundDefault = true;
+            }
+            locationCombo.addItem(path);
         }
+        
+        if (!foundDefault && !userPrefs.getDefaultLocation().equalsIgnoreCase("This PC")) {
+            locationCombo.addItem(userPrefs.getDefaultLocation());
+        }
+        locationCombo.setSelectedItem(userPrefs.getDefaultLocation());
 
         minDateSpinner.setEditor(new JSpinner.DateEditor(minDateSpinner, "yyyy-MM-dd"));
         maxDateSpinner.setEditor(new JSpinner.DateEditor(maxDateSpinner, "yyyy-MM-dd"));
@@ -178,17 +194,19 @@ public class CriteriaPanel extends JPanel {
         tab3.add(foldersCheckBox, gbc);
         gbc.gridx = 0; gbc.gridy = 1;
         tab3.add(regexCheckBox, gbc);
+        gbc.gridx = 0; gbc.gridy = 2;
+        tab3.add(duplicatesCheckBox, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 2; gbc.insets = new Insets(15, 5, 5, 10);
+        gbc.gridx = 0; gbc.gridy = 3; gbc.insets = new Insets(15, 5, 5, 10);
         tab3.add(new JLabel("Sort Results By:"), gbc);
 
         JPanel sortPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         sortPanel.add(sortCombo);
         sortPanel.add(sortDirCombo);
-        gbc.gridx = 0; gbc.gridy = 3; gbc.insets = new Insets(0, 5, 5, 10);
+        gbc.gridx = 0; gbc.gridy = 4; gbc.insets = new Insets(0, 5, 5, 10);
         tab3.add(sortPanel, gbc);
 
-        gbc.gridy = 4; gbc.weighty = 1.0; gbc.weightx = 1.0;
+        gbc.gridy = 5; gbc.weighty = 1.0; gbc.weightx = 1.0;
         tab3.add(new JLabel(""), gbc);
         
         return tab3;
@@ -198,13 +216,37 @@ public class CriteriaPanel extends JPanel {
         minSizeCheck.addActionListener(e -> {
             minSizeField.setEnabled(minSizeCheck.isSelected());
             minSizeUnit.setEnabled(minSizeCheck.isSelected());
+            updateAutoSort();
         });
         maxSizeCheck.addActionListener(e -> {
             maxSizeField.setEnabled(maxSizeCheck.isSelected());
             maxSizeUnit.setEnabled(maxSizeCheck.isSelected());
+            updateAutoSort();
         });
-        minDateCheck.addActionListener(e -> minDateSpinner.setEnabled(minDateCheck.isSelected()));
-        maxDateCheck.addActionListener(e -> maxDateSpinner.setEnabled(maxDateCheck.isSelected()));
+        minDateCheck.addActionListener(e -> {
+            minDateSpinner.setEnabled(minDateCheck.isSelected());
+            updateAutoSort();
+        });
+        maxDateCheck.addActionListener(e -> {
+            maxDateSpinner.setEnabled(maxDateCheck.isSelected());
+            updateAutoSort();
+        });
+    }
+
+    private void updateAutoSort() {
+        boolean sizeApplied = minSizeCheck.isSelected() || maxSizeCheck.isSelected();
+        boolean dateApplied = minDateCheck.isSelected() || maxDateCheck.isSelected();
+
+        if (sizeApplied) {
+            sortCombo.setSelectedItem("Size");
+            sortDirCombo.setSelectedItem("Descending");
+        } else if (dateApplied) {
+            sortCombo.setSelectedItem("Date Modified");
+            sortDirCombo.setSelectedItem("Descending");
+        } else {
+            sortCombo.setSelectedItem("Name");
+            sortDirCombo.setSelectedItem("Ascending");
+        }
     }
 
     public void addSearchListener(Runnable onSearch) {
@@ -224,10 +266,21 @@ public class CriteriaPanel extends JPanel {
             ((JTextField) editor).getDocument().addDocumentListener(searchTrig);
         }
 
-        locationCombo.addActionListener(e -> onSearch.run());
+        locationCombo.addActionListener(e -> {
+            Object selectedObj = locationCombo.getSelectedItem();
+            if (selectedObj != null) {
+                String selected = selectedObj.toString();
+                if (!selected.equals(userPrefs.getDefaultLocation())) {
+                    userPrefs.setDefaultLocation(selected);
+                    userPrefs.save();
+                }
+            }
+            onSearch.run();
+        });
         subDirCheckBox.addActionListener(e -> onSearch.run());
         regexCheckBox.addActionListener(e -> onSearch.run());
         foldersCheckBox.addActionListener(e -> onSearch.run());
+        duplicatesCheckBox.addActionListener(e -> onSearch.run());
         sortCombo.addActionListener(e -> onSearch.run());
         sortDirCombo.addActionListener(e -> onSearch.run());
         minSizeUnit.addActionListener(e -> onSearch.run());
@@ -255,6 +308,11 @@ public class CriteriaPanel extends JPanel {
         minDateSpinner.setEnabled(false);
         maxDateCheck.setSelected(false);
         maxDateSpinner.setEnabled(false);
+        regexCheckBox.setSelected(false);
+        foldersCheckBox.setSelected(false);
+        duplicatesCheckBox.setSelected(false);
+        subDirCheckBox.setSelected(true);
+        locationCombo.setSelectedItem(userPrefs.getDefaultLocation());
     }
 
     public SearchCriteria getCriteria() {
@@ -282,7 +340,8 @@ public class CriteriaPanel extends JPanel {
                 minDate,
                 maxDate,
                 (String) sortCombo.getSelectedItem(),
-                sortDirCombo.getSelectedIndex() == 0
+                sortDirCombo.getSelectedIndex() == 0,
+                duplicatesCheckBox.isSelected()
         );
     }
     

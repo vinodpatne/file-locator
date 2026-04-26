@@ -100,6 +100,7 @@ public class MainFrame extends JFrame {
         // Open Files buttons
         statusBarPanel.getOpenBtn().addActionListener(e -> resultsTablePanel.openSelected(true));
         statusBarPanel.getOpenLocBtn().addActionListener(e -> resultsTablePanel.openSelected(false));
+        statusBarPanel.getDeleteBtn().addActionListener(e -> deleteSelectedFiles());
 
         resultsTablePanel.getTable().addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
@@ -109,6 +110,55 @@ public class MainFrame extends JFrame {
                 }
             }
         });
+
+        resultsTablePanel.getTable().addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyReleased(java.awt.event.KeyEvent e) {
+                if (e.getKeyCode() == java.awt.event.KeyEvent.VK_DELETE) {
+                    deleteSelectedFiles();
+                }
+            }
+        });
+    }
+
+    private void deleteSelectedFiles() {
+        List<String> paths = resultsTablePanel.getSelectedFilePaths();
+        if (paths.isEmpty()) return;
+
+        int response = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to permanently delete " + paths.size() + " item(s)?\nThis action cannot be undone.",
+                "Confirm Deletion", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+
+        if (response == JOptionPane.YES_OPTION) {
+            int deletedCount = 0;
+            for (String path : paths) {
+                File file = new File(path);
+                if (deleteRecursively(file)) {
+                    indexRepository.removeByPrefix(path);
+                    deletedCount++;
+                }
+            }
+            if (deletedCount > 0) {
+                indexRepository.save();
+                triggerSearch();
+                JOptionPane.showMessageDialog(this, "Successfully deleted " + deletedCount + " item(s).",
+                        "Deletion Complete", JOptionPane.INFORMATION_MESSAGE);
+            }
+        }
+    }
+
+    private boolean deleteRecursively(File file) {
+        if (!file.exists()) return true;
+        boolean success = true;
+        if (file.isDirectory()) {
+            File[] children = file.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    success &= deleteRecursively(child);
+                }
+            }
+        }
+        return success && file.delete();
     }
 
     private void checkInitialIndex() {

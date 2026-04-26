@@ -12,5 +12,6 @@ public record SearchCriteria(
         long minDate,
         long maxDate,
         String sortBy,
-        boolean sortAsc) {
+        boolean sortAsc,
+        boolean findDuplicates) {
 }
