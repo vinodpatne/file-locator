@@ -10,13 +10,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
-
-import lombok.extern.slf4j.Slf4j;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import filelocator.model.FileEntry;
 
-@Slf4j
 public class InMemoryIndexRepository implements IndexRepository {
+    private static final Logger log = Logger.getLogger(InMemoryIndexRepository.class.getName());
     private static final File INDEX_FILE = new File("files.idx");
     private static final int INDEX_VERSION = 2;
 
@@ -25,14 +25,14 @@ public class InMemoryIndexRepository implements IndexRepository {
     @Override
     public void load() {
         if (!INDEX_FILE.exists()) {
-            log.info("Index file {} not found. Starting with empty index.", INDEX_FILE.getAbsolutePath());
+            log.info("Index file " + INDEX_FILE.getAbsolutePath() + " not found. Starting with empty index.");
             return;
         }
 
         try (DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(INDEX_FILE)))) {
             int version = dis.readInt();
             if (version != INDEX_VERSION) {
-                log.warn("Old index format detected (version {}). Please re-index.", version);
+                log.warning("Old index format detected (version " + version + "). Please re-index.");
                 return;
             }
 
@@ -46,9 +46,9 @@ public class InMemoryIndexRepository implements IndexRepository {
                 newMap.put(path, new FileEntry(path, name, name.toLowerCase(), isDir, size, lastMod));
             }
             this.indexMap = newMap;
-            log.info("Loaded {} entries from index.", indexMap.size());
+            log.info("Loaded " + indexMap.size() + " entries from index.");
         } catch (IOException e) {
-            log.error("Failed to load index from {}", INDEX_FILE.getAbsolutePath(), e);
+            log.log(Level.SEVERE, "Failed to load index from " + INDEX_FILE.getAbsolutePath(), e);
         }
     }
 
@@ -69,7 +69,7 @@ public class InMemoryIndexRepository implements IndexRepository {
                 dos.writeLong(e.lastModified());
             }
         } catch (IOException e) {
-            log.error("Failed to save temp index file to {}", tempFile.getAbsolutePath(), e);
+            log.log(Level.SEVERE, "Failed to save temp index file to " + tempFile.getAbsolutePath(), e);
             throw new RuntimeException("Temp index file write failed", e);
         }
 
@@ -78,12 +78,12 @@ public class InMemoryIndexRepository implements IndexRepository {
                     java.nio.file.StandardCopyOption.REPLACE_EXISTING, 
                     java.nio.file.StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
-            log.error("Atomic move failed, attempting standard replace", e);
+            log.log(Level.SEVERE, "Atomic move failed, attempting standard replace", e);
             try {
                 java.nio.file.Files.move(tempFile.toPath(), INDEX_FILE.toPath(), 
                         java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException ex) {
-                log.error("Standard replace failed", ex);
+                log.log(Level.SEVERE, "Standard replace failed", ex);
                 throw new RuntimeException("Index file swap failed", ex);
             }
         }
@@ -93,7 +93,7 @@ public class InMemoryIndexRepository implements IndexRepository {
             newMap.put(e.path(), e);
         }
         this.indexMap = newMap;
-        log.info("Index atomically swapped. New size: {}", newMap.size());
+        log.info("Index atomically swapped. New size: " + newMap.size());
     }
 
     @Override

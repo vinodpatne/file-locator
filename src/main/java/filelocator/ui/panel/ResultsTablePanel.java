@@ -21,13 +21,14 @@ import javax.swing.table.DefaultTableModel;
 
 import java.awt.Desktop;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import filelocator.model.FileEntry;
 
-@Slf4j
 @Getter
 public class ResultsTablePanel extends JPanel {
+    private static final Logger log = Logger.getLogger(ResultsTablePanel.class.getName());
     private static final String[] COLUMNS = { "Name", "Path", "Size", "Date Modified" };
     private static final SimpleDateFormat displayFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
@@ -118,7 +119,7 @@ public class ResultsTablePanel extends JPanel {
                 }
             }
         } catch (IOException ex) {
-            log.error("Error opening file: {}", file.getAbsolutePath(), ex);
+            log.log(Level.SEVERE, "Error opening file: " + file.getAbsolutePath(), ex);
             JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
         }
     }

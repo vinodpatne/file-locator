@@ -2,8 +2,10 @@ package filelocator;
 
 import javax.swing.SwingUtilities;
 
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
 import com.formdev.flatlaf.FlatIntelliJLaf;
-import lombok.extern.slf4j.Slf4j;
 
 import filelocator.repository.IndexRepository;
 import filelocator.repository.InMemoryIndexRepository;
@@ -11,32 +13,36 @@ import filelocator.service.IndexingService;
 import filelocator.service.SearchService;
 import filelocator.ui.MainFrame;
 
-@Slf4j
 public class FileLocatorMainApp {
+    private static final Logger log = Logger.getLogger(FileLocatorMainApp.class.getName());
 
     public static void main(String[] args) {
         setupModernUI();
 
-        // Initialize Repository
+        // Initialize Repository & Services
         IndexRepository indexRepository = new InMemoryIndexRepository();
-        
-        // Let's load the index in the background to not stall startup
-        Thread loadThread = new Thread(() -> {
-            long start = System.currentTimeMillis();
-            indexRepository.load();
-            log.info("Index loaded in {} ms", (System.currentTimeMillis() - start));
-            
-            // Services
-            IndexingService indexingService = new IndexingService(indexRepository);
-            SearchService searchService = new SearchService(indexRepository);
+        IndexingService indexingService = new IndexingService(indexRepository);
+        SearchService searchService = new SearchService(indexRepository);
 
-            // Start UI
-            SwingUtilities.invokeLater(() -> {
-                MainFrame frame = new MainFrame(indexRepository, indexingService, searchService);
-                frame.setVisible(true);
-            });
+        // Start UI immediately
+        SwingUtilities.invokeLater(() -> {
+            MainFrame frame = new MainFrame(indexRepository, indexingService, searchService);
+            frame.setVisible(true);
+
+            // Load index in background
+            Thread loadThread = new Thread(() -> {
+                long start = System.currentTimeMillis();
+                indexRepository.load();
+                log.info("Index loaded in " + (System.currentTimeMillis() - start) + " ms");
+
+                // Notify UI when finished
+                SwingUtilities.invokeLater(() -> {
+                    frame.onIndexLoaded();
+                });
+            }, "IndexLoaderThread");
+            loadThread.setDaemon(true);
+            loadThread.start();
         });
-        loadThread.start();
     }
 
     private static void setupModernUI() {
@@ -53,7 +59,7 @@ public class FileLocatorMainApp {
             javax.swing.UIManager.put("defaultFont", modernFont);
             
         } catch (Exception ex) {
-            log.error("Failed to initialize FlatLaf", ex);
+            log.log(Level.SEVERE, "Failed to initialize FlatLaf", ex);
         }
     }
 }

@@ -11,6 +11,7 @@ import javax.swing.JPanel;
 import javax.swing.event.ListSelectionEvent;
 
 import filelocator.model.SearchCriteria;
+import filelocator.model.UserPreferences;
 import filelocator.repository.IndexRepository;
 import filelocator.service.IndexingService;
 import filelocator.service.SearchService;
@@ -18,12 +19,12 @@ import filelocator.ui.panel.ActionPanel;
 import filelocator.ui.panel.CriteriaPanel;
 import filelocator.ui.panel.ResultsTablePanel;
 import filelocator.ui.panel.StatusBarPanel;
-import filelocator.ui.worker.IndexWorker;
 import filelocator.ui.worker.SearchWorker;
-import lombok.extern.slf4j.Slf4j;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
-@Slf4j
 public class MainFrame extends JFrame {
+    private static final Logger log = Logger.getLogger(MainFrame.class.getName());
 
     private final IndexRepository indexRepository;
     private final IndexingService indexingService;
@@ -50,7 +51,7 @@ public class MainFrame extends JFrame {
 
         initUI();
         wireEvents();
-        checkInitialIndex();
+        statusBarPanel.setStatus("Loading index... Please wait.");
     }
 
     private void initUI() {
@@ -161,7 +162,11 @@ public class MainFrame extends JFrame {
         return success && file.delete();
     }
 
-    private void checkInitialIndex() {
+    public void onIndexLoaded() {
+        statusBarPanel.setStatus("Index loaded: " + indexRepository.size() + " items.");
+        criteriaPanel.updateLocationsDropdown();
+        triggerSearch();
+
         if (indexRepository.size() == 0) {
             int response = JOptionPane.showConfirmDialog(this,
                     "No database found. Would you like to scan 'This PC' (All Drives) now?",
@@ -169,8 +174,6 @@ public class MainFrame extends JFrame {
             if (response == JOptionPane.YES_OPTION) {
                 runIndexer();
             }
-        } else {
-            statusBarPanel.setStatus("Index loaded: " + indexRepository.size() + " items.");
         }
     }
 
@@ -196,11 +199,10 @@ public class MainFrame extends JFrame {
 
         statusBarPanel.setStatus("Status: Scanning drives... (Please wait)");
 
-        IndexWorker worker = new IndexWorker(indexingService, indexRepository, rootsToScan, () -> {
+        indexingService.buildIndex(rootsToScan, () -> {
             statusBarPanel.setStatus("Status: Index Complete. Total Items: " + indexRepository.size());
             triggerSearch();
         });
-        worker.execute();
     }
 
     private void triggerSearch() {
@@ -209,6 +211,15 @@ public class MainFrame extends JFrame {
         }
 
         SearchCriteria criteria = criteriaPanel.getCriteria();
+        String loc = criteria.locationScope();
+        if (loc != null && !loc.isBlank() && !"This PC".equalsIgnoreCase(loc)) {
+            File locFile = new File(loc);
+            if (locFile.exists() && locFile.isDirectory()) {
+                UserPreferences prefs = UserPreferences.load();
+                prefs.addRecentLocation(loc);
+                criteriaPanel.updateLocationsDropdown();
+            }
+        }
 
         if (currentSearchWorker != null && !currentSearchWorker.isDone()) {
             currentSearchWorker.cancel(true);
@@ -216,11 +227,11 @@ public class MainFrame extends JFrame {
 
         currentSearchWorker = new SearchWorker(searchService, criteria, results -> {
             if (results != null) {
-                log.debug("Search completed cleanly, updating UI with {} results.", results.size());
+                log.fine("Search completed cleanly, updating UI with " + results.size() + " results.");
                 resultsTablePanel.updateResults(results);
                 statusBarPanel.setStatus("Found " + results.size() + " matches.");
             } else {
-                log.error("Search results returned null.");
+                log.severe("Search results returned null.");
             }
         });
         currentSearchWorker.execute();

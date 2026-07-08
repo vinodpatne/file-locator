@@ -51,10 +51,11 @@ public class CriteriaPanel extends JPanel {
     private final JCheckBox regexCheckBox = new JCheckBox("Use Regular Expressions (Regex)", false);
     private final JCheckBox duplicatesCheckBox = new JCheckBox("Find Duplicates (Name & Size)", false);
     private final JComboBox<String> sortCombo = new JComboBox<>(
-            new String[] { "Name", "Size", "Date Modified" });
+            new String[] { "Name", "Size", "Date Modified", "File Path" });
     private final JComboBox<String> sortDirCombo = new JComboBox<>(new String[] { "Ascending", "Descending" });
 
     private final UserPreferences userPrefs;
+    private boolean isUpdatingDropdown = false;
 
     public CriteriaPanel() {
         userPrefs = UserPreferences.load();
@@ -62,20 +63,7 @@ public class CriteriaPanel extends JPanel {
         setLayout(new BorderLayout());
         
         locationCombo.setEditable(true);
-        locationCombo.addItem("This PC");
-        boolean foundDefault = false;
-        for (File root : File.listRoots()) {
-            String path = root.getAbsolutePath();
-            if (path.equalsIgnoreCase(userPrefs.getDefaultLocation())) {
-                foundDefault = true;
-            }
-            locationCombo.addItem(path);
-        }
-        
-        if (!foundDefault && !userPrefs.getDefaultLocation().equalsIgnoreCase("This PC")) {
-            locationCombo.addItem(userPrefs.getDefaultLocation());
-        }
-        locationCombo.setSelectedItem(userPrefs.getDefaultLocation());
+        updateLocationsDropdown();
 
         minDateSpinner.setEditor(new JSpinner.DateEditor(minDateSpinner, "yyyy-MM-dd"));
         maxDateSpinner.setEditor(new JSpinner.DateEditor(maxDateSpinner, "yyyy-MM-dd"));
@@ -251,9 +239,9 @@ public class CriteriaPanel extends JPanel {
 
     public void addSearchListener(Runnable onSearch) {
         DocumentListener searchTrig = new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { onSearch.run(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { onSearch.run(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { onSearch.run(); }
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { if (!isUpdatingDropdown) onSearch.run(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { if (!isUpdatingDropdown) onSearch.run(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { if (!isUpdatingDropdown) onSearch.run(); }
         };
 
         searchField.getDocument().addDocumentListener(searchTrig);
@@ -378,5 +366,49 @@ public class CriteriaPanel extends JPanel {
         cal.set(java.util.Calendar.MINUTE, 59);
         cal.set(java.util.Calendar.SECOND, 59);
         return cal.getTimeInMillis();
+    }
+
+    public void updateLocationsDropdown() {
+        isUpdatingDropdown = true;
+        try {
+            java.awt.event.ActionListener[] listeners = locationCombo.getActionListeners();
+            for (java.awt.event.ActionListener l : listeners) {
+                locationCombo.removeActionListener(l);
+            }
+
+            Object selected = locationCombo.getSelectedItem();
+            locationCombo.removeAllItems();
+
+            locationCombo.addItem("This PC");
+            for (File root : File.listRoots()) {
+                locationCombo.addItem(root.getAbsolutePath());
+            }
+
+            UserPreferences prefs = UserPreferences.load();
+            for (String path : prefs.getRecentLocations()) {
+                boolean exists = false;
+                for (int i = 0; i < locationCombo.getItemCount(); i++) {
+                    if (path.equalsIgnoreCase(locationCombo.getItemAt(i))) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists) {
+                    locationCombo.addItem(path);
+                }
+            }
+
+            if (selected != null) {
+                locationCombo.setSelectedItem(selected);
+            } else {
+                locationCombo.setSelectedItem(prefs.getDefaultLocation());
+            }
+
+            for (java.awt.event.ActionListener l : listeners) {
+                locationCombo.addActionListener(l);
+            }
+        } finally {
+            isUpdatingDropdown = false;
+        }
     }
 }

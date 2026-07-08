@@ -8,19 +8,20 @@ import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import filelocator.model.FileEntry;
 import filelocator.model.SearchCriteria;
 import filelocator.repository.IndexRepository;
 
-@Slf4j
 @RequiredArgsConstructor
 public class SearchService {
+    private static final Logger log = Logger.getLogger(SearchService.class.getName());
     private final IndexRepository indexRepository;
 
     public List<FileEntry> search(SearchCriteria criteria) {
-        log.debug("Executing search with criteria: {}", criteria);
+        log.fine("Executing search with criteria: " + criteria);
         
         final String extLower = (criteria.extension() != null && !criteria.extension().isBlank())
                 ? (criteria.extension().startsWith(".") ? criteria.extension().toLowerCase() : "." + criteria.extension().toLowerCase())
@@ -46,7 +47,7 @@ public class SearchService {
                 }
             }
         } catch (PatternSyntaxException e) {
-            log.warn("Invalid regex pattern: {}", cleanQuery, e);
+            log.log(Level.WARNING, "Invalid regex pattern: " + cleanQuery, e);
             pattern = null;
         }
 
@@ -58,6 +59,7 @@ public class SearchService {
         Comparator<FileEntry> comparator = switch (criteria.sortBy()) {
             case "Size" -> Comparator.comparingLong(FileEntry::size);
             case "Date Modified" -> Comparator.comparingLong(FileEntry::lastModified);
+            case "File Path" -> Comparator.comparing(FileEntry::path);
             default -> Comparator.comparing(FileEntry::nameLower); // Default to Name
         };
         
@@ -117,7 +119,7 @@ public class SearchService {
                 .limit(200)
                 .collect(Collectors.toList());
                 
-        log.info("Search returned {} files.", results.size());
+        log.info("Search returned " + results.size() + " files.");
         return results;
     }
 
