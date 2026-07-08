@@ -21,6 +21,7 @@ import javax.swing.SpinnerDateModel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentListener;
 
+import filelocator.FileLocatorMainApp;
 import filelocator.model.SearchCriteria;
 import filelocator.model.UserPreferences;
 
@@ -53,6 +54,7 @@ public class CriteriaPanel extends JPanel {
     private final JComboBox<String> sortCombo = new JComboBox<>(
             new String[] { "Name", "Size", "Date Modified", "File Path" });
     private final JComboBox<String> sortDirCombo = new JComboBox<>(new String[] { "Ascending", "Descending" });
+    private final JComboBox<String> themeCombo = new JComboBox<>(new String[] { "Dark", "Light" });
 
     private final UserPreferences userPrefs;
     private boolean isUpdatingDropdown = false;
@@ -64,6 +66,7 @@ public class CriteriaPanel extends JPanel {
         
         locationCombo.setEditable(true);
         updateLocationsDropdown();
+        themeCombo.setSelectedItem(userPrefs.getTheme());
 
         minDateSpinner.setEditor(new JSpinner.DateEditor(minDateSpinner, "yyyy-MM-dd"));
         maxDateSpinner.setEditor(new JSpinner.DateEditor(maxDateSpinner, "yyyy-MM-dd"));
@@ -186,15 +189,21 @@ public class CriteriaPanel extends JPanel {
         tab3.add(duplicatesCheckBox, gbc);
 
         gbc.gridx = 0; gbc.gridy = 3; gbc.insets = new Insets(15, 5, 5, 10);
+        tab3.add(new JLabel("Color Theme:"), gbc);
+
+        gbc.gridx = 0; gbc.gridy = 4; gbc.insets = new Insets(0, 5, 5, 10);
+        tab3.add(themeCombo, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 5; gbc.insets = new Insets(15, 5, 5, 10);
         tab3.add(new JLabel("Sort Results By:"), gbc);
 
         JPanel sortPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         sortPanel.add(sortCombo);
         sortPanel.add(sortDirCombo);
-        gbc.gridx = 0; gbc.gridy = 4; gbc.insets = new Insets(0, 5, 5, 10);
+        gbc.gridx = 0; gbc.gridy = 6; gbc.insets = new Insets(0, 5, 5, 10);
         tab3.add(sortPanel, gbc);
 
-        gbc.gridy = 5; gbc.weighty = 1.0; gbc.weightx = 1.0;
+        gbc.gridy = 7; gbc.weighty = 1.0; gbc.weightx = 1.0;
         tab3.add(new JLabel(""), gbc);
         
         return tab3;
@@ -254,6 +263,19 @@ public class CriteriaPanel extends JPanel {
             ((JTextField) editor).getDocument().addDocumentListener(searchTrig);
         }
 
+        locationCombo.addItemListener(e -> {
+            if (e.getStateChange() == java.awt.event.ItemEvent.SELECTED) {
+                Object selectedObj = locationCombo.getSelectedItem();
+                if (selectedObj != null) {
+                    String selected = selectedObj.toString();
+                    if (!selected.equals(userPrefs.getDefaultLocation())) {
+                        userPrefs.setDefaultLocation(selected);
+                        userPrefs.save();
+                    }
+                }
+                onSearch.run();
+            }
+        });
         locationCombo.addActionListener(e -> {
             Object selectedObj = locationCombo.getSelectedItem();
             if (selectedObj != null) {
@@ -269,6 +291,14 @@ public class CriteriaPanel extends JPanel {
         regexCheckBox.addActionListener(e -> onSearch.run());
         foldersCheckBox.addActionListener(e -> onSearch.run());
         duplicatesCheckBox.addActionListener(e -> onSearch.run());
+        themeCombo.addActionListener(e -> {
+            String selectedTheme = (String) themeCombo.getSelectedItem();
+            if (selectedTheme != null && !selectedTheme.equals(userPrefs.getTheme())) {
+                userPrefs.setTheme(selectedTheme);
+                userPrefs.save();
+                FileLocatorMainApp.applyTheme(selectedTheme);
+            }
+        });
         sortCombo.addActionListener(e -> onSearch.run());
         sortDirCombo.addActionListener(e -> onSearch.run());
         minSizeUnit.addActionListener(e -> onSearch.run());
@@ -370,12 +400,11 @@ public class CriteriaPanel extends JPanel {
 
     public void updateLocationsDropdown() {
         isUpdatingDropdown = true;
+        java.awt.event.ActionListener[] listeners = locationCombo.getActionListeners();
+        for (java.awt.event.ActionListener l : listeners) {
+            locationCombo.removeActionListener(l);
+        }
         try {
-            java.awt.event.ActionListener[] listeners = locationCombo.getActionListeners();
-            for (java.awt.event.ActionListener l : listeners) {
-                locationCombo.removeActionListener(l);
-            }
-
             Object selected = locationCombo.getSelectedItem();
             locationCombo.removeAllItems();
 
@@ -403,12 +432,39 @@ public class CriteriaPanel extends JPanel {
             } else {
                 locationCombo.setSelectedItem(prefs.getDefaultLocation());
             }
-
+        } finally {
             for (java.awt.event.ActionListener l : listeners) {
                 locationCombo.addActionListener(l);
             }
-        } finally {
             isUpdatingDropdown = false;
+        }
+    }
+
+    public void addLocationIfNew(String path) {
+        if (path == null || path.isBlank() || "This PC".equalsIgnoreCase(path)) {
+            return;
+        }
+        try {
+            path = new File(path).getAbsolutePath();
+        } catch (Exception e) {
+            // Use fallback
+        }
+        
+        boolean exists = false;
+        for (int i = 0; i < locationCombo.getItemCount(); i++) {
+            if (path.equalsIgnoreCase(locationCombo.getItemAt(i))) {
+                exists = true;
+                break;
+            }
+        }
+        
+        if (!exists) {
+            isUpdatingDropdown = true;
+            try {
+                locationCombo.addItem(path);
+            } finally {
+                isUpdatingDropdown = false;
+            }
         }
     }
 }

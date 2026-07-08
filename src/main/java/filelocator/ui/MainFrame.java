@@ -164,7 +164,6 @@ public class MainFrame extends JFrame {
 
     public void onIndexLoaded() {
         statusBarPanel.setStatus("Index loaded: " + indexRepository.size() + " items.");
-        criteriaPanel.updateLocationsDropdown();
         triggerSearch();
 
         if (indexRepository.size() == 0) {
@@ -217,7 +216,7 @@ public class MainFrame extends JFrame {
             if (locFile.exists() && locFile.isDirectory()) {
                 UserPreferences prefs = UserPreferences.load();
                 prefs.addRecentLocation(loc);
-                criteriaPanel.updateLocationsDropdown();
+                criteriaPanel.addLocationIfNew(loc);
             }
         }
 

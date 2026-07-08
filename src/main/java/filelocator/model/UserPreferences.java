@@ -13,6 +13,7 @@ public class UserPreferences {
     private static final File PREFS_FILE = new File("user-preferences.json");
     private String defaultLocation = "C:\\";
     private java.util.List<String> recentLocations = new java.util.ArrayList<>();
+    private String theme = "Dark";
 
     public static UserPreferences load() {
         UserPreferences prefs = new UserPreferences();
@@ -30,6 +31,22 @@ public class UserPreferences {
                         if (startQuote != -1 && endQuote != -1) {
                             String loc = content.substring(startQuote + 1, endQuote).replace("\\\\", "\\");
                             prefs.setDefaultLocation(loc);
+                        }
+                    }
+                }
+
+                // Parse theme
+                int themeIndex = content.indexOf("\"theme\"");
+                if (themeIndex != -1) {
+                    int colonIndex = content.indexOf(":", themeIndex);
+                    if (colonIndex != -1) {
+                        int startQuote = content.indexOf("\"", colonIndex);
+                        int endQuote = content.indexOf("\"", startQuote + 1);
+                        if (startQuote != -1 && endQuote != -1) {
+                            String t = content.substring(startQuote + 1, endQuote).trim();
+                            if ("Light".equalsIgnoreCase(t) || "Dark".equalsIgnoreCase(t)) {
+                                prefs.setTheme(t);
+                            }
                         }
                     }
                 }
@@ -67,6 +84,7 @@ public class UserPreferences {
         try {
             StringBuilder sb = new StringBuilder();
             sb.append("{\n");
+            sb.append("  \"theme\": \"").append(theme).append("\",\n");
             sb.append("  \"defaultLocation\": \"").append(defaultLocation.replace("\\", "\\\\")).append("\",\n");
             sb.append("  \"recentLocations\": [\n");
             for (int i = 0; i < recentLocations.size(); i++) {

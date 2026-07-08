@@ -23,10 +23,49 @@ public class SearchService {
     public List<FileEntry> search(SearchCriteria criteria) {
         log.fine("Executing search with criteria: " + criteria);
         
-        final String extLower = (criteria.extension() != null && !criteria.extension().isBlank())
-                ? (criteria.extension().startsWith(".") ? criteria.extension().toLowerCase() : "." + criteria.extension().toLowerCase())
-                : null;
-        final String scopeLower = (criteria.locationScope() != null) ? criteria.locationScope().toLowerCase() : "";
+        final List<Pattern> extPatterns = new java.util.ArrayList<>();
+        String rawExt = (criteria.extension() != null) ? criteria.extension().replace(" ", "") : "";
+        if (!rawExt.isEmpty()) {
+            String[] parts = rawExt.split(",");
+            for (String part : parts) {
+                if (!part.isEmpty()) {
+                    String glob = part.toLowerCase();
+                    if (glob.startsWith("*.")) {
+                        // Keep as is
+                    } else if (glob.startsWith(".")) {
+                        glob = "*" + glob;
+                    } else {
+                        glob = "*." + glob;
+                    }
+                    try {
+                        extPatterns.add(Pattern.compile(convertGlobToRegex(glob)));
+                    } catch (Exception e) {
+                        log.log(Level.WARNING, "Invalid extension pattern: " + part, e);
+                    }
+                }
+            }
+        }
+        String scope = (criteria.locationScope() != null) ? criteria.locationScope().trim() : "";
+        if (!scope.isEmpty() && !"This PC".equalsIgnoreCase(scope)) {
+            // Normalize single drive letters or drive specs (e.g. "C", "C:", "c", "c:") to drive roots (e.g. "C:\")
+            if (scope.length() == 1 && Character.isLetter(scope.charAt(0))) {
+                scope = scope + ":" + java.io.File.separator;
+            } else if (scope.length() == 2 && Character.isLetter(scope.charAt(0)) && scope.charAt(1) == ':') {
+                scope = scope + java.io.File.separator;
+            }
+            try {
+                scope = new java.io.File(scope).getAbsolutePath();
+                if (!scope.endsWith(java.io.File.separator)) {
+                    scope += java.io.File.separator;
+                }
+                scope = scope.toLowerCase();
+            } catch (Exception e) {
+                scope = scope.toLowerCase();
+            }
+        } else {
+            scope = "";
+        }
+        final String scopeLower = scope;
 
         Pattern pattern = null;
         boolean isExactMatch = false;
@@ -84,18 +123,29 @@ public class SearchService {
                             return false;
                         }
                         if (!criteria.recursive()) {
-                            int lastSlash = p.lastIndexOf(File.separatorChar);
+                            int lastSlash = p.lastIndexOf(java.io.File.separatorChar);
                             if (lastSlash == -1) {
                                 return false;
                             }
-                            String parent = p.substring(0, lastSlash);
-                            return parent.equals(scopeLower) || parent.equals(scopeLower.substring(0, scopeLower.length() - 1));
+                            String parent = p.substring(0, lastSlash + 1);
+                            return parent.equals(scopeLower);
                         }
                     }
                     return true;
                 })
                 // 5. Extension Filter (Skip extension checks on folders)
-                .filter(e -> e.isDirectory() || extLower == null || e.nameLower().endsWith(extLower))
+                .filter(e -> {
+                    if (e.isDirectory() || extPatterns.isEmpty()) {
+                        return true;
+                    }
+                    String name = e.nameLower();
+                    for (Pattern p : extPatterns) {
+                        if (p.matcher(name).matches()) {
+                            return true;
+                        }
+                    }
+                    return false;
+                })
                 // 6. Name Filter
                 .filter(e -> {
                     if (finalTerm.isEmpty()) return true;
@@ -119,7 +169,9 @@ public class SearchService {
                 .limit(200)
                 .collect(Collectors.toList());
                 
-        log.info("Search returned " + results.size() + " files.");
+        log.info("Search pattern: '" + (criteria.query() != null ? criteria.query() : "") + 
+                 "', Target directory: '" + (scopeLower.isEmpty() ? "This PC" : scopeLower) + 
+                 "', Count: " + results.size());
         return results;
     }
 

@@ -48,9 +48,8 @@ public class ResultsTablePanel extends JPanel {
         table = new JTable(model);
         table.setRowHeight(26);
         table.setShowVerticalLines(false);
-        table.setGridColor(new Color(230, 230, 230));
+        table.setShowHorizontalLines(true);
         table.getTableHeader().setFont(table.getFont().deriveFont(Font.BOLD));
-        table.getTableHeader().setBackground(new Color(245, 245, 245));
         table.getTableHeader().setPreferredSize(new Dimension(0, 30));
 
         DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
@@ -58,7 +57,11 @@ public class ResultsTablePanel extends JPanel {
         table.getColumnModel().getColumn(2).setCellRenderer(rightRenderer);
 
         JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, new Color(200, 200, 200)));
+        Color borderColor = javax.swing.UIManager.getColor("Separator.foreground");
+        if (borderColor == null) {
+            borderColor = new Color(80, 80, 90);
+        }
+        scrollPane.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, borderColor));
 
         add(scrollPane, BorderLayout.CENTER);
 

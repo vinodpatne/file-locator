@@ -137,14 +137,16 @@ public class IndexingService {
                             }
                         }
                         
-                        tempEntries.add(new FileEntry(
+                        FileEntry entry = new FileEntry(
                                 dir.toAbsolutePath().toString(),
                                 dir.getFileName() != null ? dir.getFileName().toString() : dir.toString(),
                                 dir.getFileName() != null ? dir.getFileName().toString().toLowerCase() : dir.toString().toLowerCase(),
                                 true,
                                 0,
                                 attrs.lastModifiedTime().toMillis()
-                        ));
+                        );
+                        tempEntries.add(entry);
+                        indexRepository.add(entry);
                         return FileVisitResult.CONTINUE;
                     }
 
@@ -152,14 +154,16 @@ public class IndexingService {
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                         checkCpuAndThrottle(osBean, fileCounter);
 
-                        tempEntries.add(new FileEntry(
+                        FileEntry entry = new FileEntry(
                                 file.toAbsolutePath().toString(),
                                 file.getFileName().toString(),
                                 file.getFileName().toString().toLowerCase(),
                                 false,
                                 attrs.size(),
                                 attrs.lastModifiedTime().toMillis()
-                        ));
+                        );
+                        tempEntries.add(entry);
+                        indexRepository.add(entry);
                         return FileVisitResult.CONTINUE;
                     }
 
@@ -179,12 +183,12 @@ public class IndexingService {
 
     private void checkCpuAndThrottle(com.sun.management.OperatingSystemMXBean osBean, java.util.concurrent.atomic.AtomicInteger fileCounter) {
         int count = fileCounter.incrementAndGet();
-        if (count % 100 == 0) {
+        if (count % 500 == 0) {
             double load = osBean.getCpuLoad();
-            if (load > 0.25) {
+            if (load > 0.70) {
                 try {
                     log.fine("CPU utilization is high (" + String.format("%.2f%%", load * 100) + "), throttling indexing task...");
-                    Thread.sleep(100);
+                    Thread.sleep(50);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
