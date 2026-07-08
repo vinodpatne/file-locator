@@ -79,6 +79,7 @@ public class CriteriaPanel extends JPanel {
         maxDateSpinner.setEnabled(false);
 
         JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.putClientProperty("JTabbedPane.tabType", "card");
         tabbedPane.setBorder(new EmptyBorder(5, 10, 5, 10));
 
         tabbedPane.addTab("Name & Location", buildNameLocationTab());

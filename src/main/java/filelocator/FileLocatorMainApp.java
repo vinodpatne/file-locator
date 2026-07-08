@@ -1,20 +1,21 @@
 package filelocator;
 
-import javax.swing.SwingUtilities;
 import java.awt.Color;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.swing.SwingUtilities;
 import javax.swing.plaf.ColorUIResource;
 
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
 
-import filelocator.repository.IndexRepository;
+import filelocator.model.UserPreferences;
 import filelocator.repository.InMemoryIndexRepository;
+import filelocator.repository.IndexRepository;
 import filelocator.service.IndexingService;
 import filelocator.service.SearchService;
 import filelocator.ui.MainFrame;
-import filelocator.model.UserPreferences;
 
 public class FileLocatorMainApp {
     private static final Logger log = Logger.getLogger(FileLocatorMainApp.class.getName());
@@ -50,7 +51,8 @@ public class FileLocatorMainApp {
 
     private static void setupModernUI() {
         try {
-            // Prevent FlatLaf from loading native libraries (DLLs) which can be blocked by Endpoint Protection
+            // Prevent FlatLaf from loading native libraries (DLLs) which can be blocked by
+            // Endpoint Protection
             System.setProperty("flatlaf.useNativeLibrary", "false");
 
             // Apply saved theme preference
@@ -64,7 +66,8 @@ public class FileLocatorMainApp {
 
     public static void applyTheme(String themeName) {
         try {
-            // Custom Slate-and-Purple Palette / Light Palette using ColorUIResource for runtime dynamic updates
+            // Custom Slate-and-Purple Palette / Light Palette using ColorUIResource for
+            // runtime dynamic updates
             Color primaryBg;
             Color secondaryBg;
             Color accentColor;
@@ -73,17 +76,25 @@ public class FileLocatorMainApp {
             Color whiteColor = new ColorUIResource(255, 255, 255);
 
             if ("Light".equalsIgnoreCase(themeName)) {
-                primaryBg = new ColorUIResource(245, 245, 247);      // Warm Light Grey
-                secondaryBg = new ColorUIResource(255, 255, 255);    // Clean White
-                textColor = new ColorUIResource(28, 28, 30);          // Dark Grey/Black
-                accentColor = new ColorUIResource(29, 78, 216);       // Refined Royal/Navy Blue (#1D4ED8)
-                accentHover = new ColorUIResource(59, 130, 246);      // Bright Accent Blue (#3B82F6)
+                primaryBg = new ColorUIResource(245, 245, 247); // Warm Light Grey
+                secondaryBg = new ColorUIResource(255, 255, 255); // Clean White
+                textColor = new ColorUIResource(28, 28, 30); // Dark Grey/Black
+                accentColor = new ColorUIResource(29, 78, 216); // Refined Royal/Navy Blue (#1D4ED8)
+                accentHover = new ColorUIResource(59, 130, 246); // Bright Accent Blue (#3B82F6)
             } else {
-                primaryBg = new ColorUIResource(18, 18, 24);         // Deep Slate background
-                secondaryBg = new ColorUIResource(30, 30, 40);       // Lighter panel background
-                textColor = new ColorUIResource(243, 244, 246);      // Off-white text
-                accentColor = new ColorUIResource(124, 58, 237);     // Vibrant Purple accent (#7C3AED)
-                accentHover = new ColorUIResource(139, 92, 246);     // Highlight Purple (#8B5CF6)
+                primaryBg = new ColorUIResource(18, 18, 24); // Deep Slate background
+                secondaryBg = new ColorUIResource(30, 30, 40); // Lighter panel background
+                textColor = new ColorUIResource(243, 244, 246); // Off-white text
+                accentColor = new ColorUIResource(124, 58, 237); // Vibrant Purple accent (#7C3AED)
+                accentHover = new ColorUIResource(139, 92, 246); // Highlight Purple (#8B5CF6)
+            }
+
+            // Apply Look and Feel first, so that custom UIManager properties override its
+            // defaults correctly
+            if ("Light".equalsIgnoreCase(themeName)) {
+                FlatLightLaf.setup();
+            } else {
+                FlatDarkLaf.setup();
             }
 
             // Global Font
@@ -135,17 +146,12 @@ public class FileLocatorMainApp {
             // Tabs
             javax.swing.UIManager.put("TabbedPane.background", primaryBg);
             javax.swing.UIManager.put("TabbedPane.tabAreaBackground", primaryBg);
-            javax.swing.UIManager.put("TabbedPane.selectedForeground", "Light".equalsIgnoreCase(themeName) ? textColor : whiteColor);
+            javax.swing.UIManager.put("TabbedPane.selectedForeground", whiteColor);
             javax.swing.UIManager.put("TabbedPane.selectedBackground", accentColor);
+            javax.swing.UIManager.put("TabbedPane.focusColor", accentColor);
             javax.swing.UIManager.put("TabbedPane.underlineColor", accentColor);
-            javax.swing.UIManager.put("TabbedPane.hoverColor", accentHover);
-
-            // Apply Theme
-            if ("Light".equalsIgnoreCase(themeName)) {
-                FlatLightLaf.setup();
-            } else {
-                FlatDarkLaf.setup();
-            }
+            javax.swing.UIManager.put("TabbedPane.hoverColor", accentColor);
+            javax.swing.UIManager.put("TabbedPane.hoverForeground", whiteColor);
 
             // Update UI on all open windows
             for (java.awt.Window window : java.awt.Window.getWindows()) {
