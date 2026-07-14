@@ -13,6 +13,7 @@ import lombok.Getter;
 @Getter
 public class StatusBarPanel extends JPanel {
     private final JLabel statusLabel = new JLabel("Status: Ready");
+    private final JLabel lastIndexLabel = new JLabel("Last Index Update: Never");
     private final JButton openBtn = new JButton("Open File");
     private final JButton openLocBtn = new JButton("Open Location");
     private final JButton deleteBtn = new JButton("Delete");
@@ -21,7 +22,11 @@ public class StatusBarPanel extends JPanel {
         setLayout(new BorderLayout());
         setBorder(new EmptyBorder(8, 15, 8, 15));
 
-        add(statusLabel, BorderLayout.WEST);
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 0));
+        leftPanel.setOpaque(false);
+        leftPanel.add(statusLabel);
+        leftPanel.add(lastIndexLabel);
+        add(leftPanel, BorderLayout.WEST);
 
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         openBtn.setEnabled(false);
@@ -36,6 +41,15 @@ public class StatusBarPanel extends JPanel {
 
     public void setStatus(String status) {
         statusLabel.setText(status);
+    }
+
+    public void updateLastIndexTime(long time) {
+        if (time <= 0) {
+            lastIndexLabel.setText("Last Index Update: Never");
+        } else {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            lastIndexLabel.setText("Last Index Update: " + sdf.format(new java.util.Date(time)));
+        }
     }
 
     public void setActionButtonsEnabled(boolean enabled) {

@@ -30,6 +30,7 @@ public class IndexingService {
     private final IndexRepository indexRepository;
     private final AtomicBoolean isIndexing = new AtomicBoolean(false);
     private volatile long lastIndexTime = 0;
+    private Runnable onIndexCompleteCallback = null;
     private final ExecutorService indexExecutor = Executors.newSingleThreadExecutor(runnable -> {
         Thread t = new Thread(runnable, "IndexingService-Thread");
         t.setDaemon(true);
@@ -38,7 +39,13 @@ public class IndexingService {
 
     public IndexingService(IndexRepository indexRepository) {
         this.indexRepository = indexRepository;
+        UserPreferences prefs = UserPreferences.load();
+        this.lastIndexTime = prefs.getLastIndexingTime();
         startCpuMonitor();
+    }
+
+    public void setOnIndexComplete(Runnable callback) {
+        this.onIndexCompleteCallback = callback;
     }
 
     private void startCpuMonitor() {
@@ -99,9 +106,18 @@ public class IndexingService {
             }
             try {
                 buildIndexInternal(rootPaths);
-                lastIndexTime = System.currentTimeMillis();
+                long now = System.currentTimeMillis();
+                lastIndexTime = now;
+
+                UserPreferences prefs = UserPreferences.load();
+                prefs.setLastIndexingTime(now);
+                prefs.save();
+
                 if (onComplete != null) {
                     javax.swing.SwingUtilities.invokeLater(onComplete);
+                }
+                if (onIndexCompleteCallback != null) {
+                    javax.swing.SwingUtilities.invokeLater(onIndexCompleteCallback);
                 }
             } finally {
                 isIndexing.set(false);

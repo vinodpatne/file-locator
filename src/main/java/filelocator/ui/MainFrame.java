@@ -52,6 +52,16 @@ public class MainFrame extends JFrame {
         initUI();
         wireEvents();
         statusBarPanel.setStatus("Loading index... Please wait.");
+
+        // Initialize last indexing time display
+        UserPreferences prefs = UserPreferences.load();
+        statusBarPanel.updateLastIndexTime(prefs.getLastIndexingTime());
+
+        // Listen for index completion to update the status bar
+        this.indexingService.setOnIndexComplete(() -> {
+            UserPreferences p = UserPreferences.load();
+            statusBarPanel.updateLastIndexTime(p.getLastIndexingTime());
+        });
     }
 
     private void initUI() {

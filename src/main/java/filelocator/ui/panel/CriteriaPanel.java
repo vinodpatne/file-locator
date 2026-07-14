@@ -49,7 +49,7 @@ public class CriteriaPanel extends JPanel {
 
     // Tab 3: Advanced
     private final JCheckBox foldersCheckBox = new JCheckBox("Include Folders in Results", false);
-    private final JCheckBox regexCheckBox = new JCheckBox("Use Regular Expressions (Regex)", false);
+    private final JCheckBox regexCheckBox = new JCheckBox("Use Regular Expressions (Regex)", true);
     private final JCheckBox duplicatesCheckBox = new JCheckBox("Find Duplicates (Name & Size)", false);
     private final JComboBox<String> sortCombo = new JComboBox<>(
             new String[] { "Name", "Size", "Date Modified", "File Path" });
@@ -67,6 +67,8 @@ public class CriteriaPanel extends JPanel {
         locationCombo.setEditable(true);
         updateLocationsDropdown();
         themeCombo.setSelectedItem(userPrefs.getTheme());
+        sortCombo.setSelectedItem("Date Modified");
+        sortDirCombo.setSelectedItem("Descending");
 
         minDateSpinner.setEditor(new JSpinner.DateEditor(minDateSpinner, "yyyy-MM-dd"));
         maxDateSpinner.setEditor(new JSpinner.DateEditor(maxDateSpinner, "yyyy-MM-dd"));
@@ -178,35 +180,62 @@ public class CriteriaPanel extends JPanel {
         JPanel tab3 = new JPanel(new GridBagLayout());
         tab3.setBorder(new EmptyBorder(15, 15, 15, 15));
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.WEST;
 
-        gbc.gridx = 0; gbc.gridy = 0;
-        tab3.add(foldersCheckBox, gbc);
-        gbc.gridx = 0; gbc.gridy = 1;
-        tab3.add(regexCheckBox, gbc);
-        gbc.gridx = 0; gbc.gridy = 2;
-        tab3.add(duplicatesCheckBox, gbc);
+        // Left Panel for checkboxes
+        JPanel leftPanel = new JPanel(new GridBagLayout());
+        leftPanel.setOpaque(false);
+        GridBagConstraints gbcLeft = new GridBagConstraints();
+        gbcLeft.insets = new Insets(5, 5, 5, 10);
+        gbcLeft.fill = GridBagConstraints.HORIZONTAL;
+        gbcLeft.anchor = GridBagConstraints.WEST;
 
-        gbc.gridx = 0; gbc.gridy = 3; gbc.insets = new Insets(15, 5, 5, 10);
-        tab3.add(new JLabel("Color Theme:"), gbc);
+        gbcLeft.gridx = 0; gbcLeft.gridy = 0;
+        leftPanel.add(regexCheckBox, gbcLeft);
+        gbcLeft.gridx = 0; gbcLeft.gridy = 1;
+        leftPanel.add(foldersCheckBox, gbcLeft);
+        gbcLeft.gridx = 0; gbcLeft.gridy = 2;
+        leftPanel.add(duplicatesCheckBox, gbcLeft);
 
-        gbc.gridx = 0; gbc.gridy = 4; gbc.insets = new Insets(0, 5, 5, 10);
-        tab3.add(themeCombo, gbc);
+        gbcLeft.gridy = 3; gbcLeft.weighty = 1.0; gbcLeft.weightx = 1.0;
+        leftPanel.add(new JLabel(""), gbcLeft);
 
-        gbc.gridx = 0; gbc.gridy = 5; gbc.insets = new Insets(15, 5, 5, 10);
-        tab3.add(new JLabel("Sort Results By:"), gbc);
+        // Right Panel for combo boxes
+        JPanel rightPanel = new JPanel(new GridBagLayout());
+        rightPanel.setOpaque(false);
+        GridBagConstraints gbcRight = new GridBagConstraints();
+        gbcRight.fill = GridBagConstraints.HORIZONTAL;
+        gbcRight.anchor = GridBagConstraints.WEST;
+
+        JPanel themePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        themePanel.setOpaque(false);
+        themePanel.add(new JLabel("Color Theme:"));
+        themePanel.add(themeCombo);
+        gbcRight.gridx = 0; gbcRight.gridy = 0; gbcRight.insets = new Insets(5, 0, 5, 10);
+        rightPanel.add(themePanel, gbcRight);
 
         JPanel sortPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        sortPanel.setOpaque(false);
+        sortPanel.add(new JLabel("Sort Results By:"));
         sortPanel.add(sortCombo);
         sortPanel.add(sortDirCombo);
-        gbc.gridx = 0; gbc.gridy = 6; gbc.insets = new Insets(0, 5, 5, 10);
-        tab3.add(sortPanel, gbc);
+        gbcRight.gridx = 0; gbcRight.gridy = 1; gbcRight.insets = new Insets(15, 0, 5, 10);
+        rightPanel.add(sortPanel, gbcRight);
 
-        gbc.gridy = 7; gbc.weighty = 1.0; gbc.weightx = 1.0;
-        tab3.add(new JLabel(""), gbc);
-        
+        gbcRight.gridy = 2; gbcRight.weighty = 1.0; gbcRight.weightx = 1.0;
+        rightPanel.add(new JLabel(""), gbcRight);
+
+        // Add left and right panels to tab3
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weighty = 1.0;
+
+        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.5;
+        gbc.insets = new Insets(0, 0, 0, 10);
+        tab3.add(leftPanel, gbc);
+
+        gbc.gridx = 1; gbc.gridy = 0; gbc.weightx = 0.5;
+        gbc.insets = new Insets(0, 10, 0, 0);
+        tab3.add(rightPanel, gbc);
+
         return tab3;
     }
 
@@ -242,8 +271,8 @@ public class CriteriaPanel extends JPanel {
             sortCombo.setSelectedItem("Date Modified");
             sortDirCombo.setSelectedItem("Descending");
         } else {
-            sortCombo.setSelectedItem("Name");
-            sortDirCombo.setSelectedItem("Ascending");
+            sortCombo.setSelectedItem("Date Modified");
+            sortDirCombo.setSelectedItem("Descending");
         }
     }
 
@@ -327,11 +356,13 @@ public class CriteriaPanel extends JPanel {
         minDateSpinner.setEnabled(false);
         maxDateCheck.setSelected(false);
         maxDateSpinner.setEnabled(false);
-        regexCheckBox.setSelected(false);
+        regexCheckBox.setSelected(true);
         foldersCheckBox.setSelected(false);
         duplicatesCheckBox.setSelected(false);
         subDirCheckBox.setSelected(true);
         locationCombo.setSelectedItem(userPrefs.getDefaultLocation());
+        sortCombo.setSelectedItem("Date Modified");
+        sortDirCombo.setSelectedItem("Descending");
     }
 
     public SearchCriteria getCriteria() {

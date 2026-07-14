@@ -14,6 +14,7 @@ public class UserPreferences {
     private String defaultLocation = "C:\\";
     private java.util.List<String> recentLocations = new java.util.ArrayList<>();
     private String theme = "Dark";
+    private long lastIndexingTime = 0;
 
     public static UserPreferences load() {
         UserPreferences prefs = new UserPreferences();
@@ -46,6 +47,26 @@ public class UserPreferences {
                             String t = content.substring(startQuote + 1, endQuote).trim();
                             if ("Light".equalsIgnoreCase(t) || "Dark".equalsIgnoreCase(t)) {
                                 prefs.setTheme(t);
+                            }
+                        }
+                    }
+                }
+
+                // Parse lastIndexingTime
+                int timeIndex = content.indexOf("\"lastIndexingTime\"");
+                if (timeIndex != -1) {
+                    int colonIndex = content.indexOf(":", timeIndex);
+                    if (colonIndex != -1) {
+                        int commaIndex = content.indexOf(",", colonIndex);
+                        if (commaIndex == -1) {
+                            commaIndex = content.indexOf("}", colonIndex);
+                        }
+                        if (commaIndex != -1) {
+                            try {
+                                String val = content.substring(colonIndex + 1, commaIndex).trim();
+                                prefs.setLastIndexingTime(Long.parseLong(val));
+                            } catch (Exception e) {
+                                // Ignore
                             }
                         }
                     }
@@ -86,6 +107,7 @@ public class UserPreferences {
             sb.append("{\n");
             sb.append("  \"theme\": \"").append(theme).append("\",\n");
             sb.append("  \"defaultLocation\": \"").append(defaultLocation.replace("\\", "\\\\")).append("\",\n");
+            sb.append("  \"lastIndexingTime\": ").append(lastIndexingTime).append(",\n");
             sb.append("  \"recentLocations\": [\n");
             for (int i = 0; i < recentLocations.size(); i++) {
                 sb.append("    \"").append(recentLocations.get(i).replace("\\", "\\\\")).append("\"");
