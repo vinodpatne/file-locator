@@ -100,26 +100,74 @@ public class CriteriaPanel extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.WEST;
 
+        // Name field with info icon
+        JPanel nameLabelPanel = new JPanel(new BorderLayout(5, 0));
+        nameLabelPanel.setOpaque(false);
+        nameLabelPanel.add(new JLabel("Name:"), BorderLayout.WEST);
+        nameLabelPanel.add(createInfoIcon("Name Search Help",
+                "<p>Filters results by file or folder name. Matches any part of the name by default.</p>" +
+                        "<p><b>Special Syntax & Examples:</b></p>" +
+                        "<ul>" +
+                        "  <li><b>Exact match:</b> Wrap in quotes, e.g., <code>\"report\"</code> (won't match <i>MonthlyReport.docx</i>)</li>"
+                        +
+                        "  <li><b>Wildcards:</b> Use <code>*</code> for any sequence, <code>?</code> for a single character.<br>"
+                        +
+                        "      e.g., <code>*.xlsx</code> (all Excel files) or <code>budget_202?</code></li>" +
+                        "  <li><b>Regex:</b> Enable <i>Use Regular Expressions</i> under Advanced tab.<br>" +
+                        "      e.g., <code>^img_\\d{4}\\.png$</code></li>" +
+                        "</ul>"),
+                BorderLayout.EAST);
+
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 0;
-        tab1.add(new JLabel("Name:"), gbc);
+        tab1.add(nameLabelPanel, gbc);
         gbc.gridx = 1;
         gbc.weightx = 1.0;
         tab1.add(searchField, gbc);
 
+        // Extensions field with info icon
+        JPanel extLabelPanel = new JPanel(new BorderLayout(5, 0));
+        extLabelPanel.setOpaque(false);
+        extLabelPanel.add(new JLabel("Extensions:"), BorderLayout.WEST);
+        extLabelPanel.add(createInfoIcon("Extensions Filter Help",
+                "<p>Restricts results to files with the specified extension(s).</p>" +
+                        "<p><b>Syntax & Examples:</b></p>" +
+                        "<ul>" +
+                        "  <li><b>Single extension:</b> <code>txt</code> or <code>.txt</code></li>" +
+                        "  <li><b>Multiple extensions:</b> Separate with commas, e.g., <code>pdf, docx, xlsx</code> or <code>*.pdf, *.docx, *.xlsx</code></li>"
+                        +
+                        "</ul>"),
+                BorderLayout.EAST);
+
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.weightx = 0;
-        tab1.add(new JLabel("Extensions:"), gbc);
+        tab1.add(extLabelPanel, gbc);
         gbc.gridx = 1;
         gbc.weightx = 1.0;
         tab1.add(extensionField, gbc);
 
+        // Look in field with info icon
+        JPanel locLabelPanel = new JPanel(new BorderLayout(5, 0));
+        locLabelPanel.setOpaque(false);
+        locLabelPanel.add(new JLabel("Look in:"), BorderLayout.WEST);
+        locLabelPanel.add(createInfoIcon("Search Location Help",
+                "<p>Restricts the search scope to a specific folder or drive.</p>" +
+                        "<p><b>Options & Examples:</b></p>" +
+                        "<ul>" +
+                        "  <li><b>This PC:</b> Searches all connected drives and volumes on the computer.</li>" +
+                        "  <li><b>Recent Folders:</b> Select a previously searched path from the dropdown.</li>" +
+                        "  <li><b>Custom Folder:</b> Click <b>Browse...</b> to pick any folder on the disk.</li>" +
+                        "  <li><b>Subdirectories:</b> Toggle the checkbox below to search subdirectories recursively.</li>"
+                        +
+                        "</ul>"),
+                BorderLayout.EAST);
+
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.weightx = 0;
-        tab1.add(new JLabel("Look in:"), gbc);
+        tab1.add(locLabelPanel, gbc);
 
         JPanel locPanel = new JPanel(new BorderLayout(5, 0));
         locPanel.add(locationCombo, BorderLayout.CENTER);
@@ -559,5 +607,135 @@ public class CriteriaPanel extends JPanel {
 
     public javax.swing.JTextField getSearchField() {
         return searchField;
+    }
+
+    private javax.swing.JLabel createInfoIcon(String title, String htmlContent) {
+        javax.swing.JLabel infoLabel = new javax.swing.JLabel(new InfoIcon(16));
+        infoLabel.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+        infoLabel.setToolTipText("Click for search help & examples");
+        infoLabel.setForeground(java.awt.Color.GRAY);
+
+        infoLabel.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                showHelpPopup(title, htmlContent);
+            }
+
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                java.awt.Color accent = javax.swing.UIManager.getColor("AccentColor");
+                if (accent != null) {
+                    infoLabel.setForeground(accent);
+                } else {
+                    infoLabel.setForeground(new java.awt.Color(124, 58, 237));
+                }
+            }
+
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                infoLabel.setForeground(java.awt.Color.GRAY);
+            }
+        });
+
+        return infoLabel;
+    }
+
+    private void showHelpPopup(String title, String bodyHtml) {
+        java.awt.Color bg = javax.swing.UIManager.getColor("control");
+        java.awt.Color fg = javax.swing.UIManager.getColor("text");
+        java.awt.Color accent = javax.swing.UIManager.getColor("AccentColor");
+        if (bg == null)
+            bg = new java.awt.Color(30, 30, 40);
+        if (fg == null)
+            fg = new java.awt.Color(243, 244, 246);
+        if (accent == null)
+            accent = new java.awt.Color(124, 58, 237);
+
+        String bgHex = toHex(bg);
+        String fgHex = toHex(fg);
+        String accentHex = toHex(accent);
+
+        boolean themeIsDark = bg.getRed() < 128;
+        String codeBgHex = themeIsDark ? "#23232c" : "#e9e9eb";
+        String borderHex = themeIsDark ? "#3f3f4e" : "#d1d1d6";
+
+        String styledHtml = "<html><head><style>" +
+                "body { color: " + fgHex + "; background-color: " + bgHex
+                + "; margin: 0; padding: 12px; font-size: 0.9em; }" +
+                "code { background-color: " + codeBgHex + "; color: " + accentHex
+                + "; padding: 2px 5px; font-family: Consolas, monospace; font-size: 0.95em; border: 1px solid "
+                + borderHex + "; border-radius: 4px; }" +
+                "ul { margin: 4px 0; padding-left: 20px; }" +
+                "li { margin-bottom: 4px; }" +
+                "b { color: " + fgHex + "; }" +
+                "p { margin: 4px 0; line-height: 1.2; }" +
+                "</style></head><body>" +
+                bodyHtml +
+                "</body></html>";
+
+        javax.swing.JEditorPane pane = new javax.swing.JEditorPane("text/html", styledHtml);
+        pane.setEditable(false);
+        pane.setBackground(bg);
+        pane.setForeground(fg);
+        pane.putClientProperty(javax.swing.JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
+
+        java.awt.Font defaultFont = javax.swing.UIManager.getFont("Label.font");
+        if (defaultFont != null) {
+            pane.setFont(defaultFont);
+        }
+
+        pane.setPreferredSize(new java.awt.Dimension(450, 185));
+
+        javax.swing.JOptionPane.showOptionDialog(
+                CriteriaPanel.this,
+                pane,
+                title,
+                javax.swing.JOptionPane.DEFAULT_OPTION,
+                javax.swing.JOptionPane.PLAIN_MESSAGE,
+                null,
+                new Object[0],
+                null);
+    }
+
+    private String toHex(java.awt.Color c) {
+        return String.format("#%02x%02x%02x", c.getRed(), c.getGreen(), c.getBlue());
+    }
+
+    private static class InfoIcon implements javax.swing.Icon {
+        private final int size;
+
+        public InfoIcon(int size) {
+            this.size = size;
+        }
+
+        @Override
+        public void paintIcon(java.awt.Component c, java.awt.Graphics g, int x, int y) {
+            java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+            g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+
+            // Draw circle
+            g2.setColor(c.getForeground());
+            g2.setStroke(new java.awt.BasicStroke(1.5f));
+            g2.drawOval(x + 2, y + 2, size - 4, size - 4);
+
+            // Draw the dot of the 'i'
+            int cx = x + size / 2;
+            g2.fillOval(cx - 1, y + 4, 2, 2);
+
+            // Draw the body of the 'i'
+            g2.drawLine(cx, y + 7, cx, y + size - 5);
+
+            g2.dispose();
+        }
+
+        @Override
+        public int getIconWidth() {
+            return size;
+        }
+
+        @Override
+        public int getIconHeight() {
+            return size;
+        }
     }
 }
