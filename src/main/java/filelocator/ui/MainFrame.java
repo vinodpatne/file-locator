@@ -70,7 +70,13 @@ public class MainFrame extends JFrame {
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        JPanel topContainer = new JPanel(new BorderLayout());
+        JPanel topContainer = new JPanel(new BorderLayout()) {
+            @Override
+            public void doLayout() {
+                super.doLayout();
+                alignSearchButton();
+            }
+        };
         topContainer.add(criteriaPanel, BorderLayout.CENTER);
         topContainer.add(actionPanel, BorderLayout.EAST);
 
@@ -79,11 +85,34 @@ public class MainFrame extends JFrame {
         add(statusBarPanel, BorderLayout.SOUTH);
     }
 
+    private void alignSearchButton() {
+        try {
+            javax.swing.JTextField searchField = criteriaPanel.getSearchField();
+            java.awt.Container parent = actionPanel.getParent();
+            if (searchField != null && parent != null && javax.swing.SwingUtilities.isDescendingFrom(searchField, parent)) {
+                boolean isInitialLayout = !parent.isShowing();
+                if (searchField.isShowing() || isInitialLayout) {
+                    criteriaPanel.validate();
+                    java.awt.Point pField = javax.swing.SwingUtilities.convertPoint(searchField, 0, 0, parent);
+                    java.awt.Point pPanel = javax.swing.SwingUtilities.convertPoint(actionPanel, 0, 0, parent);
+                    int targetY = pField.y - pPanel.y;
+                    if (targetY > 0) {
+                        actionPanel.setTopPadding(targetY);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Safe fallback
+        }
+    }
+
     private void wireEvents() {
         // criteria triggers search
         criteriaPanel.addSearchListener(this::triggerSearch);
 
         // Action Panel buttons
+        actionPanel.getSearchBtn().addActionListener(e -> triggerSearch());
+
         actionPanel.getClearBtn().addActionListener(e -> {
             isClearing = true;
             try {

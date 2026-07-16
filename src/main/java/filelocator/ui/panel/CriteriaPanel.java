@@ -61,9 +61,9 @@ public class CriteriaPanel extends JPanel {
 
     public CriteriaPanel() {
         userPrefs = UserPreferences.load();
-        
+
         setLayout(new BorderLayout());
-        
+
         locationCombo.setEditable(true);
         updateLocationsDropdown();
         themeCombo.setSelectedItem(userPrefs.getTheme());
@@ -85,7 +85,7 @@ public class CriteriaPanel extends JPanel {
         tabbedPane.setBorder(new EmptyBorder(5, 10, 5, 10));
 
         tabbedPane.addTab("Name & Location", buildNameLocationTab());
-        tabbedPane.addTab("Size and Date", buildSizeDateTab());
+        tabbedPane.addTab("Size & Date", buildSizeDateTab());
         tabbedPane.addTab("Advanced", buildAdvancedTab());
 
         add(tabbedPane, BorderLayout.CENTER);
@@ -100,24 +100,32 @@ public class CriteriaPanel extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.WEST;
 
-        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0;
-        tab1.add(new JLabel("Named:"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1.0;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0;
+        tab1.add(new JLabel("Name:"), gbc);
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
         tab1.add(searchField, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0;
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 0;
         tab1.add(new JLabel("Extensions:"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1.0;
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
         tab1.add(extensionField, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0;
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.weightx = 0;
         tab1.add(new JLabel("Look in:"), gbc);
-        
+
         JPanel locPanel = new JPanel(new BorderLayout(5, 0));
         locPanel.add(locationCombo, BorderLayout.CENTER);
         JButton browseBtn = new JButton("Browse...");
         locPanel.add(browseBtn, BorderLayout.EAST);
-        
+
         browseBtn.addActionListener(e -> {
             JFileChooser fc = new JFileChooser();
             fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -126,15 +134,18 @@ public class CriteriaPanel extends JPanel {
             }
         });
 
-        gbc.gridx = 1; gbc.weightx = 1.0;
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
         tab1.add(locPanel, gbc);
 
-        gbc.gridx = 1; gbc.gridy = 3;
+        gbc.gridx = 1;
+        gbc.gridy = 3;
         tab1.add(subDirCheckBox, gbc);
 
-        gbc.gridy = 4; gbc.weighty = 1.0;
+        gbc.gridy = 4;
+        gbc.weighty = 1.0;
         tab1.add(new JLabel(""), gbc);
-        
+
         return tab1;
     }
 
@@ -146,33 +157,41 @@ public class CriteriaPanel extends JPanel {
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.WEST;
 
-        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
         tab2.add(minSizeCheck, gbc);
         JPanel minP = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
-        minP.add(minSizeField); minP.add(minSizeUnit);
+        minP.add(minSizeField);
+        minP.add(minSizeUnit);
         gbc.gridx = 1;
         tab2.add(minP, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 1;
+        gbc.gridx = 0;
+        gbc.gridy = 1;
         tab2.add(maxSizeCheck, gbc);
         JPanel maxP = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
-        maxP.add(maxSizeField); maxP.add(maxSizeUnit);
+        maxP.add(maxSizeField);
+        maxP.add(maxSizeUnit);
         gbc.gridx = 1;
         tab2.add(maxP, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 2;
+        gbc.gridx = 0;
+        gbc.gridy = 2;
         tab2.add(minDateCheck, gbc);
         gbc.gridx = 1;
         tab2.add(minDateSpinner, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 3;
+        gbc.gridx = 0;
+        gbc.gridy = 3;
         tab2.add(maxDateCheck, gbc);
         gbc.gridx = 1;
         tab2.add(maxDateSpinner, gbc);
 
-        gbc.gridy = 4; gbc.weighty = 1.0; gbc.weightx = 1.0;
+        gbc.gridy = 4;
+        gbc.weighty = 1.0;
+        gbc.weightx = 1.0;
         tab2.add(new JLabel(""), gbc);
-        
+
         return tab2;
     }
 
@@ -189,14 +208,19 @@ public class CriteriaPanel extends JPanel {
         gbcLeft.fill = GridBagConstraints.HORIZONTAL;
         gbcLeft.anchor = GridBagConstraints.WEST;
 
-        gbcLeft.gridx = 0; gbcLeft.gridy = 0;
+        gbcLeft.gridx = 0;
+        gbcLeft.gridy = 0;
         leftPanel.add(regexCheckBox, gbcLeft);
-        gbcLeft.gridx = 0; gbcLeft.gridy = 1;
+        gbcLeft.gridx = 0;
+        gbcLeft.gridy = 1;
         leftPanel.add(foldersCheckBox, gbcLeft);
-        gbcLeft.gridx = 0; gbcLeft.gridy = 2;
+        gbcLeft.gridx = 0;
+        gbcLeft.gridy = 2;
         leftPanel.add(duplicatesCheckBox, gbcLeft);
 
-        gbcLeft.gridy = 3; gbcLeft.weighty = 1.0; gbcLeft.weightx = 1.0;
+        gbcLeft.gridy = 3;
+        gbcLeft.weighty = 1.0;
+        gbcLeft.weightx = 1.0;
         leftPanel.add(new JLabel(""), gbcLeft);
 
         // Right Panel for combo boxes
@@ -210,7 +234,9 @@ public class CriteriaPanel extends JPanel {
         themePanel.setOpaque(false);
         themePanel.add(new JLabel("Color Theme:"));
         themePanel.add(themeCombo);
-        gbcRight.gridx = 0; gbcRight.gridy = 0; gbcRight.insets = new Insets(5, 0, 5, 10);
+        gbcRight.gridx = 0;
+        gbcRight.gridy = 0;
+        gbcRight.insets = new Insets(5, 0, 5, 10);
         rightPanel.add(themePanel, gbcRight);
 
         JPanel sortPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
@@ -218,21 +244,29 @@ public class CriteriaPanel extends JPanel {
         sortPanel.add(new JLabel("Sort Results By:"));
         sortPanel.add(sortCombo);
         sortPanel.add(sortDirCombo);
-        gbcRight.gridx = 0; gbcRight.gridy = 1; gbcRight.insets = new Insets(15, 0, 5, 10);
+        gbcRight.gridx = 0;
+        gbcRight.gridy = 1;
+        gbcRight.insets = new Insets(15, 0, 5, 10);
         rightPanel.add(sortPanel, gbcRight);
 
-        gbcRight.gridy = 2; gbcRight.weighty = 1.0; gbcRight.weightx = 1.0;
+        gbcRight.gridy = 2;
+        gbcRight.weighty = 1.0;
+        gbcRight.weightx = 1.0;
         rightPanel.add(new JLabel(""), gbcRight);
 
         // Add left and right panels to tab3
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weighty = 1.0;
 
-        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.5;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0.5;
         gbc.insets = new Insets(0, 0, 0, 10);
         tab3.add(leftPanel, gbc);
 
-        gbc.gridx = 1; gbc.gridy = 0; gbc.weightx = 0.5;
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.weightx = 0.5;
         gbc.insets = new Insets(0, 10, 0, 0);
         tab3.add(rightPanel, gbc);
 
@@ -278,9 +312,20 @@ public class CriteriaPanel extends JPanel {
 
     public void addSearchListener(Runnable onSearch) {
         DocumentListener searchTrig = new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { if (!isUpdatingDropdown) onSearch.run(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { if (!isUpdatingDropdown) onSearch.run(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { if (!isUpdatingDropdown) onSearch.run(); }
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                if (!isUpdatingDropdown)
+                    onSearch.run();
+            }
+
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                if (!isUpdatingDropdown)
+                    onSearch.run();
+            }
+
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                if (!isUpdatingDropdown)
+                    onSearch.run();
+            }
         };
 
         searchField.getDocument().addDocumentListener(searchTrig);
@@ -333,9 +378,15 @@ public class CriteriaPanel extends JPanel {
         sortDirCombo.addActionListener(e -> onSearch.run());
         minSizeUnit.addActionListener(e -> onSearch.run());
         maxSizeUnit.addActionListener(e -> onSearch.run());
-        minDateSpinner.addChangeListener(e -> { if (minDateCheck.isSelected()) onSearch.run(); });
-        maxDateSpinner.addChangeListener(e -> { if (maxDateCheck.isSelected()) onSearch.run(); });
-        
+        minDateSpinner.addChangeListener(e -> {
+            if (minDateCheck.isSelected())
+                onSearch.run();
+        });
+        maxDateSpinner.addChangeListener(e -> {
+            if (maxDateCheck.isSelected())
+                onSearch.run();
+        });
+
         // Listeners for checkbox toggles simulating change events
         minSizeCheck.addActionListener(e -> onSearch.run());
         maxSizeCheck.addActionListener(e -> onSearch.run());
@@ -366,8 +417,12 @@ public class CriteriaPanel extends JPanel {
     }
 
     public SearchCriteria getCriteria() {
-        long minSize = minSizeCheck.isSelected() ? parseSizeSafely(minSizeField.getText(), (String) minSizeUnit.getSelectedItem()) : 0;
-        long maxSize = maxSizeCheck.isSelected() ? parseSizeSafely(maxSizeField.getText(), (String) maxSizeUnit.getSelectedItem()) : 0;
+        long minSize = minSizeCheck.isSelected()
+                ? parseSizeSafely(minSizeField.getText(), (String) minSizeUnit.getSelectedItem())
+                : 0;
+        long maxSize = maxSizeCheck.isSelected()
+                ? parseSizeSafely(maxSizeField.getText(), (String) maxSizeUnit.getSelectedItem())
+                : 0;
 
         long minDate = minDateCheck.isSelected() ? getStartOfDay((Date) minDateSpinner.getValue()) : 0;
         long maxDate = maxDateCheck.isSelected() ? getEndOfDay((Date) maxDateSpinner.getValue()) : 0;
@@ -391,21 +446,23 @@ public class CriteriaPanel extends JPanel {
                 maxDate,
                 (String) sortCombo.getSelectedItem(),
                 sortDirCombo.getSelectedIndex() == 0,
-                duplicatesCheckBox.isSelected()
-        );
+                duplicatesCheckBox.isSelected());
     }
-    
+
     public String getRawLocation() {
         Object selectedLoc = locationCombo.getSelectedItem();
         return selectedLoc != null ? selectedLoc.toString() : "This PC";
     }
 
     private long parseSizeSafely(String text, String unit) {
-        if (text.isBlank()) return 0;
+        if (text.isBlank())
+            return 0;
         try {
             long val = Long.parseLong(text.trim());
-            if ("MB".equals(unit)) return val * 1024 * 1024;
-            if ("GB".equals(unit)) return val * 1024 * 1024 * 1024;
+            if ("MB".equals(unit))
+                return val * 1024 * 1024;
+            if ("GB".equals(unit))
+                return val * 1024 * 1024 * 1024;
             return val * 1024;
         } catch (NumberFormatException e) {
             return 0;
@@ -481,7 +538,7 @@ public class CriteriaPanel extends JPanel {
         } catch (Exception e) {
             // Use fallback
         }
-        
+
         boolean exists = false;
         for (int i = 0; i < locationCombo.getItemCount(); i++) {
             if (path.equalsIgnoreCase(locationCombo.getItemAt(i))) {
@@ -489,7 +546,7 @@ public class CriteriaPanel extends JPanel {
                 break;
             }
         }
-        
+
         if (!exists) {
             isUpdatingDropdown = true;
             try {
@@ -498,5 +555,9 @@ public class CriteriaPanel extends JPanel {
                 isUpdatingDropdown = false;
             }
         }
+    }
+
+    public javax.swing.JTextField getSearchField() {
+        return searchField;
     }
 }

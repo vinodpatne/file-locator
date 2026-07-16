@@ -99,7 +99,7 @@ graph TD
 To perform a search, configure the parameters in the **Name & Location** tab:
 
 ### Basic Search
-Type part of the file name into the **Named:** field. The results table will update instantly as you type.
+Type part of the file name into the **Name:** field. The results table will update instantly as you type.
 
 ### Search by Extension
 Use the **Extensions:** field to filter results by file types. You can supply multiple extensions separated by commas:
